@@ -19,7 +19,7 @@ The Cross-Device File Transfer Application is a peer-to-peer (P2P) file-sharing 
 ## 🔧 Installation & Setup
 ### **Prerequisites**
 * **Node.js v16+**
-* **NPM or Yarn**
+* **NPM**
 
 ### **Steps to Set Up the Project**
 1. **Clone the repository:**
