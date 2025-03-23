@@ -35,7 +35,7 @@ class Security {
   encrypt(message, clientId) {
     const sharedSecret = this.sharedSecrets.get(clientId);
     if (!sharedSecret) {
-      throw new Error('No shared secret established for this client');
+      console.error(`❌ No shared secret found for ${clientId}. Available secrets:`, this.sharedSecrets.keys())
     }
     
     return CryptoJS.AES.encrypt(message, sharedSecret).toString();
@@ -45,7 +45,7 @@ class Security {
   decrypt(encryptedMessage, clientId) {
     const sharedSecret = this.sharedSecrets.get(clientId);
     if (!sharedSecret) {
-      throw new Error('No shared secret established for this client');
+      console.error(`❌ No shared secret found for ${clientId}`)
     }
     
     const bytes = CryptoJS.AES.decrypt(encryptedMessage, sharedSecret);

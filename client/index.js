@@ -4,6 +4,8 @@ const { io: SocketIOClient } = require('socket.io-client');
 const DiscoveryClient = require('./discovery');
 const Security = require('./security');
 const readline = require('readline');
+const fs = require('fs');
+const path = require('path');
 
 // Create client app (for receiving files from server if needed)
 const app = express();
@@ -169,9 +171,44 @@ const sendSecureMessage = (message) => {
       clientId: clientId,
       encryptedMessage: encryptedMessage
     });
+    socket.emit("yuu",{x:"hibro"})
+    showCommandMenu();
   } catch (error) {
     console.error('Error encrypting message:', error);
   }
+};
+
+// Function to send a file
+const sendFile = (filePath) => {
+  if (!socket || !connectionEstablished) {
+    console.error('❌ Not connected to any server.');
+    return;
+  }
+
+  // Get file details
+  const fileName = path.basename(filePath);
+  const fileSize = fs.statSync(filePath).size;
+  console.log(`📤 Sending file: ${fileName} (${fileSize} bytes)`);
+
+  // Notify server about file transfer
+  socket.emit("start_file_transfer", { fileName, fileSize });
+
+  // Read and send file in chunks
+  const CHUNK_SIZE = 1024 * 64; // 64KB per chunk
+  const fileStream = fs.createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
+
+  fileStream.on("data", (chunk) => {
+    socket.emit("file_chunk", { fileName, chunk });
+  });
+
+  fileStream.on("end", () => {
+    socket.emit("end_file_transfer", { fileName });
+    console.log(`✅ File sent successfully: ${fileName}`);
+  });
+
+  fileStream.on("error", (err) => {
+    console.error("❌ Error reading file:", err);
+  });
 };
 
 // Show command menu after connection
@@ -183,7 +220,8 @@ const showCommandMenu = () => {
   
   console.log('\nCommands:');
   console.log('1. Send test message');
-  console.log('2. Disconnect');
+  console.log('2. Send a file');
+  console.log('3. Disconnect');
   
   rl.question('Enter command number: ', (answer) => {
     switch (answer) {
@@ -193,10 +231,20 @@ const showCommandMenu = () => {
         });
         break;
       case '2':
+        rl.question('Enter file path: ', (filePath) => {
+          if (fs.existsSync(filePath)) {
+            sendFile(filePath);
+          } else {
+            console.error('❌ File not found.');
+          }
+          showCommandMenu();
+        });
+        break;
+      case '3':
         disconnectFromServer();
         break;
       default:
-        console.log('Invalid command.');
+        console.log('❌ Invalid command.');
         showCommandMenu();
         break;
     }
